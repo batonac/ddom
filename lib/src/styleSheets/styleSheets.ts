@@ -194,8 +194,8 @@ function isCustomMediaRule(key: string): boolean {
  * // ]
  * ```
  */
-function flattenRules(styles: StyleExpr, baseSelector: string): Array<{ selector: string; properties: { [key: string]: string } }> {
-	const rules: Array<{ selector: string; properties: { [key: string]: string } }> = [];
+function flattenRules(styles: StyleExpr, baseSelector: string): Array<{ selector: string; properties: { [key: string]: string }; mediaQuery?: string }> {
+	const rules: Array<{ selector: string; properties: { [key: string]: string }; mediaQuery?: string }> = [];
 
 	// First pass: process @custom-media rules
 	for (const [key, value] of Object.entries(styles)) {
@@ -222,29 +222,28 @@ function flattenRules(styles: StyleExpr, baseSelector: string): Array<{ selector
 			if (key.startsWith(':') || key.startsWith('[')) {
 				// Pseudo-selectors and attribute selectors
 				nestedSelector = `${baseSelector}${key}`;
+				const nestedRules = flattenRules(value as StyleExpr, nestedSelector);
+				rules.push(...nestedRules);
 			} else if (key.startsWith('@media')) {
 				// Media queries - resolve custom media queries
 				const mediaQuery = key.replace('@media ', '');
 				const resolvedQuery = resolveMediaQuery(mediaQuery);
-				nestedSelector = `@media ${resolvedQuery}`;
 				
-				// For media queries, we need to wrap the base selector
+				// For media queries, process the nested styles with the base selector
 				const mediaRules = flattenRules(value as StyleExpr, baseSelector);
 				for (const rule of mediaRules) {
 					rules.push({
-						selector: `${nestedSelector} { ${rule.selector}`,
-						properties: rule.properties
+						selector: rule.selector,
+						properties: rule.properties,
+						mediaQuery: resolvedQuery
 					});
 				}
-				continue;
 			} else {
 				// Element, Class, ID, or other selectors
 				nestedSelector = `${baseSelector} ${key}`;
+				const nestedRules = flattenRules(value as StyleExpr, nestedSelector);
+				rules.push(...nestedRules);
 			}
-
-			// Recursively flatten nested styles
-			const nestedRules = flattenRules(value as StyleExpr, nestedSelector);
-			rules.push(...nestedRules);
 		}
 	}
 
@@ -280,18 +279,30 @@ export function insertRules(styles: StyleExpr, selector: string): void {
 	for (const rule of rules) {
 		try {
 			// Handle media query rules specially
-			if (rule.selector.startsWith('@media ') && rule.selector.includes(' { ')) {
-				// Extract media query and inner selector
-				const parts = rule.selector.split(' { ');
-				const mediaQuery = parts[0];
-				const innerSelector = parts[1];
+			if (rule.mediaQuery) {
+				// Find or create media rule
+				let mediaRule: CSSMediaRule | null = null;
 				
-				// Create media rule first
-				const mediaRuleIndex = sheet.insertRule(`${mediaQuery} {}`, sheet.cssRules.length);
-				const mediaRule = sheet.cssRules[mediaRuleIndex] as CSSMediaRule;
+				// Check if we already have a media rule with this query
+				for (let i = 0; i < sheet.cssRules.length; i++) {
+					const existingRule = sheet.cssRules[i];
+					if (existingRule.type === CSSRule.MEDIA_RULE) {
+						const existingMediaRule = existingRule as CSSMediaRule;
+						if (existingMediaRule.conditionText === rule.mediaQuery) {
+							mediaRule = existingMediaRule;
+							break;
+						}
+					}
+				}
+				
+				// Create new media rule if none exists
+				if (!mediaRule) {
+					const mediaRuleIndex = sheet.insertRule(`@media ${rule.mediaQuery} {}`, sheet.cssRules.length);
+					mediaRule = sheet.cssRules[mediaRuleIndex] as CSSMediaRule;
+				}
 				
 				// Insert the actual style rule inside the media rule
-				const styleRuleIndex = mediaRule.insertRule(`${innerSelector} {}`, mediaRule.cssRules.length);
+				const styleRuleIndex = mediaRule.insertRule(`${rule.selector} {}`, mediaRule.cssRules.length);
 				const cssRule = mediaRule.cssRules[styleRuleIndex] as CSSStyleRule;
 				
 				// Apply properties

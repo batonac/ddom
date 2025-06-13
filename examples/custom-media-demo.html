@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDOM @custom-media Demo</title>
+</head>
+<body>
+    <script type="module" src="custom-media-demo.js"></script>
+    <script type="module">
+        import DDOM from '../lib/dist/index.js';
+        import config from './custom-media-demo.js';
+        
+        // Initialize DDOM with the demo configuration
+        console.log('Loading DDOM @custom-media demo...');
+        const app = DDOM(config);
+        
+        // Log generated CSS for debugging
+        setTimeout(() => {
+            const sheets = document.adoptedStyleSheets;
+            if (sheets && sheets.length > 0) {
+                console.log('Generated CSS rules:');
+                for (let i = 0; i < sheets[0].cssRules.length; i++) {
+                    console.log(sheets[0].cssRules[i].cssText);
+                }
+            }
+        }, 100);
+    </script>
+</body>
+</html>
