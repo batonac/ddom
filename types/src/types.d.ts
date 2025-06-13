@@ -96,17 +96,20 @@ export type MappedArrayExpr<T = any, R = any> = {
  * Extends standard CSS properties to support nested selectors and pseudo-selectors.
  * This type enables CSS nesting syntax within style objects for more powerful styling.
  * Supports all standard CSSStyleDeclaration properties plus selector-based nesting.
+ * Also supports @custom-media rules for defining reusable media queries.
  * @example
  * {
  *   backgroundColor: 'blue',
  *   ':hover': { backgroundColor: 'red' },
- *   '.child': { color: 'white' }
+ *   '.child': { color: 'white' },
+ *   '@custom-media --narrow': '(max-width: 30em)',
+ *   '@media (--narrow)': { fontSize: '14px' }
  * }
  */
 export type StyleExpr = {
 	[K in keyof CSSStyleDeclaration]?: CSSStyleDeclaration[K];
 } & {
-	[selector: string]: StyleExpr;
+	[selector: string]: StyleExpr | string;
 };
 
 /**
