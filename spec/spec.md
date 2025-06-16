@@ -147,10 +147,56 @@ Styles are represented as objects with camelCase property names and support full
     '.child': {
       color: 'white',
       fontWeight: 'bold'
+    },
+    '@custom-media --narrow': '(max-width: 600px)',
+    '@media (--narrow)': {
+      fontSize: '14px',
+      padding: '0.5em'
     }
   }
 }
 ```
+
+#### 3.2.1 Custom Media Queries
+
+DDOM supports @custom-media rules from the CSS Media Queries Level 5 specification, allowing you to define reusable media query aliases:
+
+```javascript
+{
+  tagName: 'div',
+  style: {
+    // Define custom media queries
+    '@custom-media --mobile': '(max-width: 768px)',
+    '@custom-media --desktop': '(min-width: 1024px)',
+    '@custom-media --modern': '(color), (hover)',
+    '@custom-media --always': 'true',
+    '@custom-media --never': 'false',
+    
+    // Use them in media queries
+    '@media (--mobile)': {
+      fontSize: '14px',
+      padding: '1em'
+    },
+    '@media (--desktop)': {
+      fontSize: '18px',
+      padding: '2em'
+    },
+    '@media (--modern) and (width > 800px)': {
+      color: 'green',
+      fontWeight: 'bold'
+    }
+  }
+}
+```
+
+**Key Features:**
+- **Reusable aliases**: Define once, use everywhere
+- **Complex queries**: Support for comma-separated and combined conditions
+- **Boolean values**: Use `true` for always-active or `false` for never-active rules
+- **Logical evaluation**: Proper CSS precedence, not textual substitution
+- **Nested references**: Custom media can reference other custom media
+- **Override behavior**: Later declarations override earlier ones
+- **Circular detection**: Automatically detects and handles circular dependencies
 
 #### 3.3 Attributes
 

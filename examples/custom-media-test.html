@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDOM @custom-media Test</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 2em;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 2em 0;
+            padding: 1em;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .expected {
+            background: #e8f5e8;
+            padding: 1em;
+            border-left: 4px solid #28a745;
+            margin: 1em 0;
+        }
+        .test-element {
+            padding: 1em;
+            margin: 1em 0;
+            border: 2px solid #007bff;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        code {
+            background: #f1f1f1;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        /* Test styles to compare against */
+        .reference-narrow {
+            background: #ffeb3b;
+            font-size: 14px;
+        }
+        
+        .reference-modern {
+            color: green;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 600px) {
+            .reference-narrow {
+                background: #ffeb3b;
+                font-size: 14px;
+            }
+        }
+        
+        @media ((color) or (hover)), (width > 1024px) {
+            .reference-modern {
+                color: green;
+                font-weight: bold;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>DDOM @custom-media Rule Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Basic @custom-media Definition</h2>
+        <div class="expected">
+            <strong>Expected:</strong> The element below should have yellow background and smaller font on narrow screens (max-width: 600px).
+        </div>
+        <div id="test1-element" class="test-element">
+            Test Element 1 - Basic Custom Media
+        </div>
+        <p><strong>CSS Generated:</strong> <code>@custom-media --narrow (max-width: 600px)</code></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Complex @custom-media with Multiple Conditions</h2>
+        <div class="expected">
+            <strong>Expected:</strong> The element below should have green color and bold text when either color or hover is supported, combined with width > 1024px.
+        </div>
+        <div id="test2-element" class="test-element">
+            Test Element 2 - Complex Custom Media
+        </div>
+        <p><strong>CSS Generated:</strong> <code>@custom-media --modern (color), (hover)</code></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Boolean @custom-media Values</h2>
+        <div class="expected">
+            <strong>Expected:</strong> Element 3a should always be red (true), Element 3b should never be blue (false).
+        </div>
+        <div id="test3a-element" class="test-element">
+            Test Element 3a - Always True
+        </div>
+        <div id="test3b-element" class="test-element">
+            Test Element 3b - Always False
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Nested @custom-media References</h2>
+        <div class="expected">
+            <strong>Expected:</strong> The element below should have purple background when both narrow and modern conditions are met.
+        </div>
+        <div id="test4-element" class="test-element">
+            Test Element 4 - Nested Custom Media
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 5: Override Previous Declarations</h2>
+        <div class="expected">
+            <strong>Expected:</strong> The element below should use the last definition (max-width: 500px) not the first (max-width: 700px).
+        </div>
+        <div id="test5-element" class="test-element">
+            Test Element 5 - Override Test
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Reference Elements (Standard CSS)</h2>
+        <div class="reference-narrow test-element">
+            Reference: Standard CSS narrow (max-width: 600px)
+        </div>
+        <div class="reference-modern test-element">
+            Reference: Standard CSS modern ((color) or (hover)), (width > 1024px)
+        </div>
+    </div>
+
+    <script type="module">
+        import DDOM from '../lib/dist/index.js';
+        
+        console.log('Starting @custom-media tests...');
+        
+        // Test 1: Basic custom media
+        const test1Config = {
+            document: {
+                head: {
+                    children: [{
+                        tagName: 'style',
+                        style: {
+                            '@custom-media --narrow': '(max-width: 600px)'
+                        }
+                    }]
+                }
+            }
+        };
+        
+        // Test with actual element styling
+        const stylesConfig = {
+            customElements: [{
+                tagName: 'test-component',
+                style: {
+                    '@custom-media --narrow': '(max-width: 600px)',
+                    '@custom-media --modern': '(color), (hover)',
+                    '@custom-media --always': 'true',
+                    '@custom-media --never': 'false',
+                    '@custom-media --complex': '(--narrow) and (--modern)',
+                    '@custom-media --override-first': '(max-width: 700px)',
+                    '@custom-media --override-first': '(max-width: 500px)', // Should override
+                    
+                    // Use the custom media queries
+                    '@media (--narrow)': {
+                        '#test1-element': {
+                            backgroundColor: '#ffeb3b',
+                            fontSize: '14px'
+                        }
+                    },
+                    
+                    '@media (--modern) and (width > 1024px)': {
+                        '#test2-element': {
+                            color: 'green',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    
+                    '@media (--always)': {
+                        '#test3a-element': {
+                            backgroundColor: 'red',
+                            color: 'white'
+                        }
+                    },
+                    
+                    '@media (--never)': {
+                        '#test3b-element': {
+                            backgroundColor: 'blue',
+                            color: 'white'
+                        }
+                    },
+                    
+                    '@media (--complex)': {
+                        '#test4-element': {
+                            backgroundColor: 'purple',
+                            color: 'white'
+                        }
+                    },
+                    
+                    '@media (--override-first)': {
+                        '#test5-element': {
+                            backgroundColor: 'orange',
+                            fontSize: '18px'
+                        }
+                    }
+                }
+            }]
+        };
+        
+        // Apply the configuration
+        const app = DDOM(stylesConfig);
+        
+        console.log('Custom media tests initialized');
+        
+        // Log the generated CSS for debugging
+        setTimeout(() => {
+            const sheets = document.adoptedStyleSheets;
+            if (sheets.length > 0) {
+                console.log('Generated CSS rules:');
+                for (let i = 0; i < sheets[0].cssRules.length; i++) {
+                    console.log(sheets[0].cssRules[i].cssText);
+                }
+            }
+        }, 100);
+        
+    </script>
+</body>
+</html>

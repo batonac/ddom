@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@custom-media Feature Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2em;
+            margin: 0;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 2em;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.pass { background: #d4edda; color: #155724; }
+        .status.fail { background: #f8d7da; color: #721c24; }
+        .status.pending { background: #fff3cd; color: #856404; }
+        .demo-element {
+            padding: 1em;
+            margin: 1em 0;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        code {
+            background: #f1f1f1;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .css-output {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 1em;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>@custom-media Feature Test</h1>
+        
+        <div class="status pending" id="status">
+            Loading DDOM and running tests...
+        </div>
+        
+        <div id="test-results"></div>
+        
+        <div class="demo-element" id="demo">
+            Demo Element (should be styled by custom media queries)
+        </div>
+        
+        <h3>Expected Behavior:</h3>
+        <ul>
+            <li>Demo element should have green border (from <code>--always: true</code>)</li>
+            <li>Demo element should NOT have red border (from <code>--never: false</code>)</li>
+            <li>On narrow screens (&lt;600px), background should be yellow</li>
+            <li>CSS output should show resolved media queries, not custom names</li>
+        </ul>
+        
+        <h3>Generated CSS:</h3>
+        <div class="css-output" id="css-output">Loading...</div>
+    </div>
+
+    <script type="module">
+        import DDOM from '../lib/dist/index.js';
+        
+        const statusEl = document.getElementById('status');
+        const resultsEl = document.getElementById('test-results');
+        const cssOutputEl = document.getElementById('css-output');
+        
+        function updateStatus(message, type = 'pending') {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        function addResult(test, passed, details = '') {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <strong>${test}:</strong> 
+                ${passed ? '✅ PASS' : '❌ FAIL'}
+                ${details ? ` - ${details}` : ''}
+            `;
+            div.style.margin = '0.5em 0';
+            div.style.color = passed ? '#155724' : '#721c24';
+            resultsEl.appendChild(div);
+        }
+        
+        function showCSS() {
+            setTimeout(() => {
+                const sheets = document.adoptedStyleSheets;
+                if (sheets && sheets.length > 0) {
+                    let cssText = '';
+                    for (let i = 0; i < sheets[0].cssRules.length; i++) {
+                        cssText += sheets[0].cssRules[i].cssText + '\n';
+                    }
+                    cssOutputEl.textContent = cssText || 'No CSS rules generated';
+                } else {
+                    cssOutputEl.textContent = 'No adopted stylesheets found';
+                }
+            }, 100);
+        }
+        
+        try {
+            updateStatus('Initializing DDOM...');
+            
+            // Test configuration with @custom-media rules
+            const config = {
+                customElements: [{
+                    tagName: 'test-demo',
+                    style: {
+                        // Define custom media queries
+                        '@custom-media --narrow': '(max-width: 600px)',
+                        '@custom-media --modern': '(color), (hover)',
+                        '@custom-media --always': 'true',
+                        '@custom-media --never': 'false',
+                        
+                        // Use them in styles
+                        '#demo': {
+                            transition: 'all 0.3s ease'
+                        },
+                        
+                        '@media (--always)': {
+                            '#demo': {
+                                borderColor: 'green',
+                                borderWidth: '3px'
+                            }
+                        },
+                        
+                        '@media (--never)': {
+                            '#demo': {
+                                borderColor: 'red',
+                                borderWidth: '5px'
+                            }
+                        },
+                        
+                        '@media (--narrow)': {
+                            '#demo': {
+                                backgroundColor: '#ffeb3b',
+                                fontSize: '14px'
+                            }
+                        },
+                        
+                        '@media (--modern) and (width > 500px)': {
+                            '#demo': {
+                                color: 'darkgreen',
+                                fontWeight: 'bold'
+                            }
+                        }
+                    }
+                }]
+            };
+            
+            // Initialize DDOM
+            const app = DDOM(config);
+            
+            // Wait for processing
+            setTimeout(() => {
+                updateStatus('Running tests...');
+                
+                // Test 1: Check stylesheets exist
+                const hasSheets = document.adoptedStyleSheets.length > 0;
+                addResult('Adopted Stylesheets Created', hasSheets);
+                
+                if (hasSheets) {
+                    const sheet = document.adoptedStyleSheets[0];
+                    
+                    // Test 2: Check rules generated
+                    const hasRules = sheet.cssRules.length > 0;
+                    addResult('CSS Rules Generated', hasRules, `${sheet.cssRules.length} rules`);
+                    
+                    // Test 3: Check for media rules
+                    let mediaRuleCount = 0;
+                    for (let i = 0; i < sheet.cssRules.length; i++) {
+                        if (sheet.cssRules[i].type === CSSRule.MEDIA_RULE) {
+                            mediaRuleCount++;
+                        }
+                    }
+                    addResult('Media Rules Created', mediaRuleCount > 0, `${mediaRuleCount} media rules`);
+                    
+                    // Test 4: Check for resolved queries
+                    let allRulesText = '';
+                    for (let i = 0; i < sheet.cssRules.length; i++) {
+                        allRulesText += sheet.cssRules[i].cssText + ' ';
+                    }
+                    
+                    const hasResolved = allRulesText.includes('max-width: 600px') || 
+                                       allRulesText.includes('color') ||
+                                       allRulesText.includes('all');
+                    addResult('Custom Media Resolved', hasResolved);
+                    
+                    // Test 5: Check no unresolved references
+                    const noUnresolved = !allRulesText.includes('--narrow') && 
+                                         !allRulesText.includes('--always');
+                    addResult('No Unresolved References', noUnresolved);
+                    
+                    // Test 6: Check boolean resolution
+                    const hasBooleans = allRulesText.includes('all') || allRulesText.includes('not all');
+                    addResult('Boolean Values Resolved', hasBooleans);
+                    
+                    const totalTests = 6;
+                    const passedTests = Array.from(resultsEl.children).filter(
+                        child => child.textContent.includes('✅')
+                    ).length;
+                    
+                    updateStatus(
+                        `Tests complete: ${passedTests}/${totalTests} passed`,
+                        passedTests === totalTests ? 'pass' : 'fail'
+                    );
+                } else {
+                    updateStatus('No stylesheets found - tests failed', 'fail');
+                }
+                
+                showCSS();
+                
+            }, 200);
+            
+        } catch (error) {
+            updateStatus(`Error: ${error.message}`, 'fail');
+            console.error('Test error:', error);
+        }
+    </script>
+</body>
+</html>
