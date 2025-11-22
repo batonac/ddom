@@ -2,26 +2,28 @@
  * Centralized Namespace Registry with DRY Validation
  * 
  * Imports handlers and config types from each namespace module,
- * validates configurations, and delegates to appropriate handlers.
+ * validates with typia once, and delegates to appropriate handlers.
  */
 
-// Import namespace handlers
+import typia from 'typia';
+
+// Import namespace handlers and their config types
 import { type PrototypeConfig } from './types';
 import { processProperty } from '../core/properties';
 
-import { createArrayNamespace } from './array';
-import { createRequestNamespace } from './request';
-import { createFormDataNamespace } from './form-data';
-import { createURLSearchParamsNamespace } from './url-search-params';
-import { createURLNamespace } from './url';
-import { createBlobNamespace } from './blob';
-import { createArrayBufferNamespace } from './array-buffer';
-import { createReadableStreamNamespace } from './readable-stream';
-import { createCookieNamespace } from './cookie';
-import { createStorageNamespace } from './storage';
-import { createIndexedDBNamespace } from './indexed-db';
-import { createIDBRequestNamespace } from './indexed-db-request';
-import { createWebSocketNamespace } from './web-socket';
+import { createArrayNamespace, type ArrayConfig } from './array';
+import { createRequestNamespace, type RequestConfig } from './request';
+import { createFormDataNamespace, type FormDataConfig } from './form-data';
+import { createURLSearchParamsNamespace, type URLSearchParamsConfig } from './url-search-params';
+import { createURLNamespace, type URLConfig } from './url';
+import { createBlobNamespace, type BlobConfig } from './blob';
+import { createArrayBufferNamespace, type ArrayBufferConfig } from './array-buffer';
+import { createReadableStreamNamespace, type ReadableStreamConfig } from './readable-stream';
+import { createCookieNamespace, type CookieConfig } from './cookie';
+import { createStorageNamespace, type StorageConfig } from './storage';
+import { createIndexedDBNamespace, type IndexedDBConfig } from './indexed-db';
+import { createIDBRequestNamespace, type IDBRequestConfig } from './indexed-db-request';
+import { createWebSocketNamespace, type WebSocketConfig } from './web-socket';
 
 
 /**
@@ -51,41 +53,39 @@ interface NamespaceEntry {
  * Registry mapping prototype names to their handlers and validators
  */
 
-// Runtime validator - checks for basic namespace config structure
-const isValidNamespaceConfig = (config: any): boolean => {
-  return config && typeof config === 'object' && 'prototype' in config;
-};
+const arrayConfigValidator = typia.createIs<ArrayConfig>();
+const storageConfigValidator = typia.createIs<StorageConfig>();
 
 const NAMESPACE_REGISTRY: Record<string, NamespaceEntry> = {
   // Collection types (Array-like)
-  'Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Set': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Map': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Int8Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Uint8Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Int16Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Uint16Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Int32Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Uint32Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Float32Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
-  'Float64Array': { handler: createArrayNamespace, validator: isValidNamespaceConfig },
+  'Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Set': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Map': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Int8Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Uint8Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Int16Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Uint16Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Int32Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Uint32Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Float32Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Float64Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
 
   // Web API types
-  'Request': { handler: createRequestNamespace, validator: isValidNamespaceConfig },
-  'FormData': { handler: createFormDataNamespace, validator: isValidNamespaceConfig },
-  'URLSearchParams': { handler: createURLSearchParamsNamespace, validator: isValidNamespaceConfig },
-  'URL': { handler: createURLNamespace, validator: isValidNamespaceConfig },
-  'Blob': { handler: createBlobNamespace, validator: isValidNamespaceConfig },
-  'ArrayBuffer': { handler: createArrayBufferNamespace, validator: isValidNamespaceConfig },
-  'ReadableStream': { handler: createReadableStreamNamespace, validator: isValidNamespaceConfig },
+  'Request': { handler: createRequestNamespace, validator: typia.createIs<RequestConfig>() },
+  'FormData': { handler: createFormDataNamespace, validator: typia.createIs<FormDataConfig>() },
+  'URLSearchParams': { handler: createURLSearchParamsNamespace, validator: typia.createIs<URLSearchParamsConfig>() },
+  'URL': { handler: createURLNamespace, validator: typia.createIs<URLConfig>() },
+  'Blob': { handler: createBlobNamespace, validator: typia.createIs<BlobConfig>() },
+  'ArrayBuffer': { handler: createArrayBufferNamespace, validator: typia.createIs<ArrayBufferConfig>() },
+  'ReadableStream': { handler: createReadableStreamNamespace, validator: typia.createIs<ReadableStreamConfig>() },
 
   // Storage API types
-  'Cookie': { handler: createCookieNamespace, validator: isValidNamespaceConfig },
-  'SessionStorage': { handler: createStorageNamespace, validator: isValidNamespaceConfig },
-  'LocalStorage': { handler: createStorageNamespace, validator: isValidNamespaceConfig },
-  'IndexedDB': { handler: createIndexedDBNamespace, validator: isValidNamespaceConfig },
-  'IDBRequest': { handler: createIDBRequestNamespace, validator: isValidNamespaceConfig },
-  'WebSocket': { handler: createWebSocketNamespace, validator: isValidNamespaceConfig },
+  'Cookie': { handler: createCookieNamespace, validator: typia.createIs<CookieConfig>() },
+  'SessionStorage': { handler: createStorageNamespace, validator: storageConfigValidator },
+  'LocalStorage': { handler: createStorageNamespace, validator: storageConfigValidator },
+  'IndexedDB': { handler: createIndexedDBNamespace, validator: typia.createIs<IndexedDBConfig>() },
+  'IDBRequest': { handler: createIDBRequestNamespace, validator: typia.createIs<IDBRequestConfig>() },
+  'WebSocket': { handler: createWebSocketNamespace, validator: typia.createIs<WebSocketConfig>() },
 };
 
 /**
