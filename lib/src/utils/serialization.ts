@@ -97,8 +97,12 @@ export function deserialize<T = SerializableValue>(jsonString: string): T {
 export function isSerializable(value: unknown): value is SerializableValue {
   // Runtime validation without typia compile-time transformation
   // Check for basic JSON-compatible types and Date objects
-  if (value === null || value === undefined) {
+  if (value === null) {
     return true;
+  }
+  
+  if (value === undefined) {
+    return false; // undefined is not serializable
   }
   
   const type = typeof value;
