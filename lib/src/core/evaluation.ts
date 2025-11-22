@@ -148,7 +148,7 @@ const parseArgs = (argsStr: string, context: any): any[] => {
   const args = argsStr.match(VALUE_PATTERNS.ARG_SPLIT) || [];
 
   return args.map(arg => {
-    const trimmed = arg.replace(/^,+|,+$/g, '').trim(); // Remove leading/trailing commas
+    const trimmed = arg.replace(VALUE_PATTERNS.TRIM_COMMAS, '').trim(); // Remove leading/trailing commas
     return isLiteral(trimmed) ? parseValue(trimmed) : getProperty(trimmed, context);
   });
 };
@@ -371,7 +371,7 @@ const evaluateTemplateExpression = (expr: string, context: any): any => {
     
     // Handle low-precedence operators (+, -) first with GREEDY matching
     // This ensures they are evaluated last (lowest precedence)
-    const lowPrecMatch = expr.match(/^(.+)\s*(\+|-)\s*(.+)$/);
+    const lowPrecMatch = expr.match(VALUE_PATTERNS.ARITHMETIC_LOW_PREC);
     if (lowPrecMatch) {
       const [, left, operator, right] = lowPrecMatch;
       const leftValue = parseOperand(left);
@@ -394,7 +394,7 @@ const evaluateTemplateExpression = (expr: string, context: any): any => {
     // Then handle medium-precedence operators (*, /, %)
     // To avoid matching * in **, check if ** exists first
     if (!expr.includes('**')) {
-      const medPrecMatch = expr.match(/^(.+)\s*(\*|\/|%)\s*(.+)$/);
+      const medPrecMatch = expr.match(VALUE_PATTERNS.ARITHMETIC_MED_PREC);
       if (medPrecMatch) {
         const [, left, operator, right] = medPrecMatch;
         const leftValue = parseOperand(left);
@@ -412,7 +412,7 @@ const evaluateTemplateExpression = (expr: string, context: any): any => {
     }
     
     // Finally handle highest-precedence operator (**) with GREEDY matching  
-    const highPrecMatch = expr.match(/^(.+)\s*(\*\*)\s*(.+)$/);
+    const highPrecMatch = expr.match(VALUE_PATTERNS.ARITHMETIC_HIGH_PREC);
     if (highPrecMatch) {
       const [, left, , right] = highPrecMatch;
       const leftValue = parseOperand(left);
@@ -667,7 +667,7 @@ const createAccessorSignal = (path: string, context: any): any => {
     // If it's not a signal, resolve the full path normally with optional chaining
     if (!VALUE_PATTERNS.SIGNAL(base)) {
       // Convert ?. back to regular property access and resolve
-      const safePath = path.replace(/\?\./g, '.');
+      const safePath = path.replace(VALUE_PATTERNS.OPTIONAL_CHAIN_TO_DOT, '.');
       return getProperty(safePath, context);
     }
 

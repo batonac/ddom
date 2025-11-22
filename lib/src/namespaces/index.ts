@@ -2,12 +2,10 @@
  * Centralized Namespace Registry with DRY Validation
  * 
  * Imports handlers and config types from each namespace module,
- * validates with typia once, and delegates to appropriate handlers.
+ * validates configurations, and delegates to appropriate handlers.
  */
 
-// Temporarily disabled: import typia from 'typia';
-
-// Import namespace handlers and their config types
+// Import namespace handlers
 import { type PrototypeConfig } from './types';
 import { processProperty } from '../core/properties';
 
@@ -48,47 +46,94 @@ interface NamespaceEntry {
   validator: ConfigValidator;
 }
 
+
 /**
  * Registry mapping prototype names to their handlers and validators
  */
 
-// Temporary workaround: disable typia validators to allow building
-const dummyValidator = () => true;
-// const arrayConfigValidator = typia.createIs<ArrayConfig>();
-// const storageConfigValidator = typia.createIs<StorageConfig>();
-const arrayConfigValidator = dummyValidator;
-const storageConfigValidator = dummyValidator;
+// Runtime validators instead of typia compile-time validators
+const isValidArrayConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidStorageConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidRequestConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidFormDataConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidURLSearchParamsConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidURLConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidBlobConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidArrayBufferConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidReadableStreamConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidCookieConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidIndexedDBConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidIDBRequestConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
+
+const isValidWebSocketConfig = (config: any): boolean => {
+  return config && typeof config === 'object' && 'prototype' in config;
+};
 
 const NAMESPACE_REGISTRY: Record<string, NamespaceEntry> = {
   // Collection types (Array-like)
-  'Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Set': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Map': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Int8Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Uint8Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Int16Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Uint16Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Int32Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Uint32Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Float32Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
-  'Float64Array': { handler: createArrayNamespace, validator: arrayConfigValidator },
+  'Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Set': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Map': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Int8Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Uint8Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Int16Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Uint16Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Int32Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Uint32Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Float32Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
+  'Float64Array': { handler: createArrayNamespace, validator: isValidArrayConfig },
 
   // Web API types
-  'Request': { handler: createRequestNamespace, validator: dummyValidator },
-  'FormData': { handler: createFormDataNamespace, validator: dummyValidator },
-  'URLSearchParams': { handler: createURLSearchParamsNamespace, validator: dummyValidator },
-  'URL': { handler: createURLNamespace, validator: dummyValidator },
-  'Blob': { handler: createBlobNamespace, validator: dummyValidator },
-  'ArrayBuffer': { handler: createArrayBufferNamespace, validator: dummyValidator },
-  'ReadableStream': { handler: createReadableStreamNamespace, validator: dummyValidator },
+  'Request': { handler: createRequestNamespace, validator: isValidRequestConfig },
+  'FormData': { handler: createFormDataNamespace, validator: isValidFormDataConfig },
+  'URLSearchParams': { handler: createURLSearchParamsNamespace, validator: isValidURLSearchParamsConfig },
+  'URL': { handler: createURLNamespace, validator: isValidURLConfig },
+  'Blob': { handler: createBlobNamespace, validator: isValidBlobConfig },
+  'ArrayBuffer': { handler: createArrayBufferNamespace, validator: isValidArrayBufferConfig },
+  'ReadableStream': { handler: createReadableStreamNamespace, validator: isValidReadableStreamConfig },
 
   // Storage API types
-  'Cookie': { handler: createCookieNamespace, validator: dummyValidator },
-  'SessionStorage': { handler: createStorageNamespace, validator: storageConfigValidator },
-  'LocalStorage': { handler: createStorageNamespace, validator: storageConfigValidator },
-  'IndexedDB': { handler: createIndexedDBNamespace, validator: dummyValidator },
-  'IDBRequest': { handler: createIDBRequestNamespace, validator: dummyValidator },
-  'WebSocket': { handler: createWebSocketNamespace, validator: dummyValidator },
+  'Cookie': { handler: createCookieNamespace, validator: isValidCookieConfig },
+  'SessionStorage': { handler: createStorageNamespace, validator: isValidStorageConfig },
+  'LocalStorage': { handler: createStorageNamespace, validator: isValidStorageConfig },
+  'IndexedDB': { handler: createIndexedDBNamespace, validator: isValidIndexedDBConfig },
+  'IDBRequest': { handler: createIDBRequestNamespace, validator: isValidIDBRequestConfig },
+  'WebSocket': { handler: createWebSocketNamespace, validator: isValidWebSocketConfig },
 };
 
 /**

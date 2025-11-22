@@ -202,6 +202,48 @@ const VALUE_PATTERNS = {
   ARITHMETIC_OPS: /^(.+?)\s*(\*\*|\*|\/|%|\+|-)\s*(.+)$/,
 
   /**
+   * Low-precedence arithmetic operators (+, -) with greedy matching.
+   * Used for evaluating addition and subtraction last in order of operations.
+   * @example
+   * '2 + 3'.match(VALUE_PATTERNS.ARITHMETIC_LOW_PREC); // ['2 + 3', '2', '+', '3']
+   * '10 - 5'.match(VALUE_PATTERNS.ARITHMETIC_LOW_PREC); // ['10 - 5', '10', '-', '5']
+   */
+  ARITHMETIC_LOW_PREC: /^(.+)\s*(\+|-)\s*(.+)$/,
+
+  /**
+   * Medium-precedence arithmetic operators (*, /, %) with greedy matching.
+   * Used for evaluating multiplication, division, and modulo operations.
+   * @example
+   * '2 * 3'.match(VALUE_PATTERNS.ARITHMETIC_MED_PREC); // ['2 * 3', '2', '*', '3']
+   * '10 / 2'.match(VALUE_PATTERNS.ARITHMETIC_MED_PREC); // ['10 / 2', '10', '/', '2']
+   */
+  ARITHMETIC_MED_PREC: /^(.+)\s*(\*|\/|%)\s*(.+)$/,
+
+  /**
+   * High-precedence arithmetic operator (**) with greedy matching.
+   * Used for evaluating exponentiation operations with highest precedence.
+   * @example
+   * '2 ** 3'.match(VALUE_PATTERNS.ARITHMETIC_HIGH_PREC); // ['2 ** 3', '2', '**', '3']
+   */
+  ARITHMETIC_HIGH_PREC: /^(.+)\s*(\*\*)\s*(.+)$/,
+
+  /**
+   * Pattern for removing leading and trailing commas.
+   * Used when parsing function arguments to clean up comma-separated values.
+   * @example
+   * ',arg,'.replace(VALUE_PATTERNS.TRIM_COMMAS, ''); // 'arg'
+   */
+  TRIM_COMMAS: /^,+|,+$/g,
+
+  /**
+   * Pattern for replacing optional chaining (?.) with regular property access (.).
+   * Used for normalizing property paths.
+   * @example
+   * 'user?.name'.replace(VALUE_PATTERNS.OPTIONAL_CHAIN_TO_DOT, '.'); // 'user.name'
+   */
+  OPTIONAL_CHAIN_TO_DOT: /\?\./g,
+
+  /**
    * Optional chaining detection pattern.
    * Detects question mark at the end of property parts (from ?.split).
    * @example

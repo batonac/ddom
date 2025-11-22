@@ -1,10 +1,8 @@
 /**
  * Serialization Utilities
  * 
- * Simplified serialization using typia validation with Date support.
+ * Simplified serialization with Date support using runtime validation.
  */
-
-// Temporarily disabled: import typia from 'typia';
 
 export type JSONValue = string | number | boolean | null | JSONValue[] | {[key: string]: JSONValue}
 
@@ -82,11 +80,11 @@ export function deserialize<T = SerializableValue>(jsonString: string): T {
 }
 
 /**
- * Validates if a value is serializable using typia type checking.
+ * Validates if a value is serializable.
  * Ensures the value conforms to SerializableValue type constraints,
  * which includes JSON-compatible types plus Date objects.
  * 
- * @param _value - The value to validate
+ * @param value - The value to validate
  * @returns True if the value can be safely serialized
  * 
  * @example
@@ -96,10 +94,35 @@ export function deserialize<T = SerializableValue>(jsonString: string): T {
  * console.log(isSerializable(function() {})); // false
  * ```
  */
-export function isSerializable(_value: unknown): _value is SerializableValue {
-  // Temporary workaround for build - always return true
-  // return typia.is<SerializableValue>(_value);
-  return true;
+export function isSerializable(value: unknown): value is SerializableValue {
+  // Runtime validation without typia compile-time transformation
+  // Check for basic JSON-compatible types and Date objects
+  if (value === null || value === undefined) {
+    return true;
+  }
+  
+  const type = typeof value;
+  if (type === 'string' || type === 'number' || type === 'boolean') {
+    return true;
+  }
+  
+  if (value instanceof Date) {
+    return true;
+  }
+  
+  if (type === 'function' || type === 'symbol') {
+    return false;
+  }
+  
+  if (Array.isArray(value)) {
+    return value.every(item => isSerializable(item));
+  }
+  
+  if (type === 'object') {
+    return Object.values(value as object).every(item => isSerializable(item));
+  }
+  
+  return false;
 }
 
 /**
