@@ -332,7 +332,11 @@ function applyAttributesBinding(element: Element, attributes: Record<string, any
  */
 function setAttributeValue(element: Element, name: string, value: any): void {
   if (typeof value === 'boolean') {
-    value ? element.setAttribute(name, '') : element.removeAttribute(name);
+    if (value) {
+      element.setAttribute(name, '');
+    } else {
+      element.removeAttribute(name);
+    }
   } else if (value == null) {
     element.removeAttribute(name);
   } else {
