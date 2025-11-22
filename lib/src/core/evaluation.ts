@@ -337,9 +337,11 @@ const evaluateTemplateExpression = (expr: string, context: any): any => {
 
   // Arithmetic operations: handle **, *, /, %, +, - with proper precedence
   // Check if expression contains arithmetic operators (but not in ternary or comparisons)
+  // Skip if it has ternary operator (but allow optional chaining ?.)
   // Process in order of LOWEST to HIGHEST precedence, using greedy matching
   // This ensures operators are evaluated in the correct order
-  if (!expr.includes('?') && !VALUE_PATTERNS.COMPARISON_OPS.test(expr)) {
+  const hasTernary = VALUE_PATTERNS.TERNARY.test(expr);
+  if (!hasTernary && !VALUE_PATTERNS.COMPARISON_OPS.test(expr)) {
     // Parse operands - handle nested expressions recursively
     const parseOperand = (operand: string): number => {
       const trimmed = operand.trim();
@@ -389,22 +391,24 @@ const evaluateTemplateExpression = (expr: string, context: any): any => {
       }
     }
     
-    // Then handle medium-precedence operators (*, /, %) - match only if no ** nearby
-    // Use negative lookbehind and lookahead to avoid matching * in **
-    const medPrecMatch = expr.match(/^(.+)\s*(?<!\*)(\*|\/|%)(?!\*)\s*(.+)$/);
-    if (medPrecMatch) {
-      const [, left, operator, right] = medPrecMatch;
-      const leftValue = parseOperand(left);
-      const rightValue = parseOperand(right);
-      
-      if (!Number.isNaN(leftValue) && !Number.isNaN(rightValue)) {
-        switch (operator) {
-          case '*': return leftValue * rightValue;
-          case '/': return leftValue / rightValue;
-          case '%': return leftValue % rightValue;
+    // Then handle medium-precedence operators (*, /, %)
+    // To avoid matching * in **, check if ** exists first
+    if (!expr.includes('**')) {
+      const medPrecMatch = expr.match(/^(.+)\s*(\*|\/|%)\s*(.+)$/);
+      if (medPrecMatch) {
+        const [, left, operator, right] = medPrecMatch;
+        const leftValue = parseOperand(left);
+        const rightValue = parseOperand(right);
+        
+        if (!Number.isNaN(leftValue) && !Number.isNaN(rightValue)) {
+          switch (operator) {
+            case '*': return leftValue * rightValue;
+            case '/': return leftValue / rightValue;
+            case '%': return leftValue % rightValue;
+          }
         }
+        return NaN;
       }
-      return NaN;
     }
     
     // Finally handle highest-precedence operator (**) with GREEDY matching  

@@ -191,8 +191,8 @@ const VALUE_PATTERNS = {
 
   /**
    * Arithmetic operator pattern for binary operations.
-   * Ordered by specificity - longer operators first (** before *).
    * Matches exponentiation, multiplication, division, modulo, addition, and subtraction.
+   * Note: Operator precedence is handled in evaluation.ts, not by this pattern.
    * @example
    * 'count ** 2'.match(VALUE_PATTERNS.ARITHMETIC_OPS); // ['count ** 2', 'count', '**', '2']
    * 'price * quantity'.match(VALUE_PATTERNS.ARITHMETIC_OPS); // ['price * quantity', 'price', '*', 'quantity']
