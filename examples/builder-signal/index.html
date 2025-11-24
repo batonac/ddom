@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Signal-Based DDOM Builder</title>
+    <script type="module" src="../../lib/dist/index.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .builder-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .palette {
+            width: 200px;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .palette h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+        }
+        
+        .element-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            transition: background-color 0.2s;
+        }
+        
+        .element-button:hover {
+            background-color: #e9ecef;
+        }
+        
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .toolbar {
+            height: 50px;
+            background: #fff;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 10px;
+        }
+        
+        .toolbar button {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .toolbar button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            overflow: auto;
+            background: #f8f9fa;
+            position: relative;
+        }
+        
+        .canvas {
+            min-height: 100%;
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .properties {
+            width: 300px;
+            background: #f8f9fa;
+            border-left: 1px solid #dee2e6;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .properties h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+        }
+        
+        .property-group {
+            margin-bottom: 20px;
+        }
+        
+        .property-group h4 {
+            margin: 0 0 10px 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .property-field {
+            margin-bottom: 12px;
+        }
+        
+        .property-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .property-field input, .property-field textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .property-field input[type="color"] {
+            height: 35px;
+            padding: 0;
+        }
+        
+        .selected {
+            outline: 2px solid #007bff !important;
+            outline-offset: 2px;
+        }
+        
+        .empty-canvas {
+            text-align: center;
+            color: #6c757d;
+            padding: 60px 20px;
+            font-style: italic;
+        }
+        
+        .no-selection {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+        
+        .drag-preview {
+            opacity: 0.5;
+            transform: rotate(2deg);
+        }
+        
+        .drop-indicator {
+            height: 2px;
+            background: #007bff;
+            margin: 2px 0;
+            border-radius: 1px;
+        }
+        
+        .batch-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ffc107;
+            color: #212529;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+    <script type="module">
+        import builderConfig from './index.js';
+
+        // Wait for DDOM to be available
+        window.addEventListener('load', () => {
+            // Create the builder interface
+            DDOM.adoptWindow(builderConfig);
+
+            // Initialize the builder
+            if (builderConfig.oncreateElement) {
+                builderConfig.oncreateElement.call(builderConfig);
+            }
+        });
+    </script>
+</head>
+<body>
+    <!-- The builder interface will be rendered here by DDOM -->
+</body>
+</html>
