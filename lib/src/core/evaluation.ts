@@ -148,7 +148,7 @@ const parseArgs = (argsStr: string, context: any): any[] => {
   const args = argsStr.match(VALUE_PATTERNS.ARG_SPLIT) || [];
 
   return args.map(arg => {
-    const trimmed = arg.replace(/^,+|,+$/g, '').trim(); // Remove leading/trailing commas
+    const trimmed = arg.replace(VALUE_PATTERNS.TRIM_COMMAS, '').trim(); // Remove leading/trailing commas
     return isLiteral(trimmed) ? parseValue(trimmed) : getProperty(trimmed, context);
   });
 };
@@ -244,9 +244,23 @@ const evaluateFilter = (filter: any, context: any): boolean => {
       // If left operand is a function, call it with context
       leftValue = filter.leftOperand.call(context.item);
     } else {
-      leftValue = getValue(getProperty(filter.leftOperand, context));
+      // Check if left operand contains operators - if so, evaluate it as an expression
+      const leftStr = String(filter.leftOperand).trim();
+      if (VALUE_PATTERNS.ARITHMETIC_OPS.test(leftStr)) {
+        leftValue = evaluateTemplateExpression(leftStr, context);
+      } else {
+        leftValue = getValue(getProperty(filter.leftOperand, context));
+      }
     }
-    const rightValue = getValue(getProperty(filter.rightOperand, context));
+    
+    // Similar handling for right operand
+    const rightStr = String(filter.rightOperand).trim();
+    let rightValue;
+    if (VALUE_PATTERNS.ARITHMETIC_OPS.test(rightStr)) {
+      rightValue = evaluateTemplateExpression(rightStr, context);
+    } else {
+      rightValue = getValue(getProperty(filter.rightOperand, context));
+    }
 
     // Direct operator lookup for maximum performance
     switch (filter.operator) {
@@ -321,7 +335,98 @@ const evaluateTemplateExpression = (expr: string, context: any): any => {
     return getValue(resolved);
   };
 
+  // Arithmetic operations: handle **, *, /, %, +, - with proper precedence
+  // Check if expression contains arithmetic operators (but not in ternary or comparisons)
+  // Skip if it has ternary operator (but allow optional chaining ?.)
+  // Process in order of LOWEST to HIGHEST precedence, using greedy matching
+  // This ensures operators are evaluated in the correct order
+  const hasTernary = VALUE_PATTERNS.TERNARY.test(expr);
+  if (!hasTernary && !VALUE_PATTERNS.COMPARISON_OPS.test(expr)) {
+    // Parse operands - handle nested expressions recursively
+    const parseOperand = (operand: string): number => {
+      const trimmed = operand.trim();
+      
+      // If it's a literal number, parse it
+      if (isLiteral(trimmed)) {
+        const value = parseValue(trimmed);
+        return typeof value === 'number' ? value : NaN;
+      }
+      
+      // If it has any arithmetic operators, evaluate recursively
+      if (VALUE_PATTERNS.ARITHMETIC_OPS.test(trimmed)) {
+        return evaluateTemplateExpression(trimmed, context);
+      }
+      
+      // If it's a function call
+      if (VALUE_PATTERNS.FUNCTION_CALL.test(trimmed)) {
+        const result = callFunction(trimmed, context);
+        const value = getValue(result);
+        return typeof value === 'number' ? value : NaN;
+      }
+      
+      // Otherwise resolve as property and unwrap
+      const value = resolve(trimmed);
+      return typeof value === 'number' ? value : NaN;
+    };
+    
+    // Handle low-precedence operators (+, -) first with GREEDY matching
+    // This ensures they are evaluated last (lowest precedence)
+    const lowPrecMatch = expr.match(VALUE_PATTERNS.ARITHMETIC_LOW_PREC);
+    if (lowPrecMatch) {
+      const [, left, operator, right] = lowPrecMatch;
+      const leftValue = parseOperand(left);
+      const rightValue = parseOperand(right);
+      
+      // Only perform arithmetic if both values are numbers
+      if (!Number.isNaN(leftValue) && !Number.isNaN(rightValue)) {
+        switch (operator) {
+          case '+': return leftValue + rightValue;
+          case '-': return leftValue - rightValue;
+        }
+      }
+      
+      // If + operator and not numeric, fall through to string concatenation
+      if (operator !== '+') {
+        return NaN;
+      }
+    }
+    
+    // Then handle medium-precedence operators (*, /, %)
+    // To avoid matching * in **, check if ** exists first
+    if (!expr.includes('**')) {
+      const medPrecMatch = expr.match(VALUE_PATTERNS.ARITHMETIC_MED_PREC);
+      if (medPrecMatch) {
+        const [, left, operator, right] = medPrecMatch;
+        const leftValue = parseOperand(left);
+        const rightValue = parseOperand(right);
+        
+        if (!Number.isNaN(leftValue) && !Number.isNaN(rightValue)) {
+          switch (operator) {
+            case '*': return leftValue * rightValue;
+            case '/': return leftValue / rightValue;
+            case '%': return leftValue % rightValue;
+          }
+        }
+        return NaN;
+      }
+    }
+    
+    // Finally handle highest-precedence operator (**) with GREEDY matching  
+    const highPrecMatch = expr.match(VALUE_PATTERNS.ARITHMETIC_HIGH_PREC);
+    if (highPrecMatch) {
+      const [, left, , right] = highPrecMatch;
+      const leftValue = parseOperand(left);
+      const rightValue = parseOperand(right);
+      
+      if (!Number.isNaN(leftValue) && !Number.isNaN(rightValue)) {
+        return Math.pow(leftValue, rightValue);
+      }
+      return NaN;
+    }
+  }
+
   // String concatenation: operand + operand (simple case)
+  // This handles the case where + is used for string concatenation, not arithmetic
   if (expr.includes(' + ') && !expr.includes('?')) {
     const parts = expr.split(' + ').map(part => {
       const trimmed = part.trim();
@@ -562,7 +667,7 @@ const createAccessorSignal = (path: string, context: any): any => {
     // If it's not a signal, resolve the full path normally with optional chaining
     if (!VALUE_PATTERNS.SIGNAL(base)) {
       // Convert ?. back to regular property access and resolve
-      const safePath = path.replace(/\?\./g, '.');
+      const safePath = path.replace(VALUE_PATTERNS.OPTIONAL_CHAIN_TO_DOT, '.');
       return getProperty(safePath, context);
     }
 
