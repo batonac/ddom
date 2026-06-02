@@ -1,4 +1,4 @@
-# NOTICE: Deprecated in favor of [Jx Suite](/jxsuite/jx)
+# NOTICE: Deprecated in favor of [Jx Suite](https://github.com/jxsuite/jx)
 
 <!-- Logo -->
 
