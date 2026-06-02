@@ -1,3 +1,5 @@
+# NOTICE: Deprecated in favor of [Jx Suite](/jxsuite/jx)
+
 <!-- Logo -->
 
 <p align="left">
